@@ -1,0 +1,372 @@
+{
+  "entities": {
+    "Duel": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Duel",
+      "type": "object",
+      "description": "Represents a duel between two traders in the Fluxion Arena.",
+      "properties": {
+        "duelId": {
+          "type": "string",
+          "description": "Unique identifier for the duel entity. (PK)"
+        },
+        "symbol": {
+          "type": "string",
+          "description": "The trading symbol used in the duel (e.g., BTCUSD)."
+        },
+        "simDays": {
+          "type": "number",
+          "description": "The number of simulation days (1 or 2)."
+        },
+        "durationSec": {
+          "type": "number",
+          "description": "The duration of the duel in seconds."
+        },
+        "traderAId": {
+          "type": "string",
+          "description": "Reference to Trader A's profile. (Relationship: Duel 1:1 TraderProfile)"
+        },
+        "traderBId": {
+          "type": "string",
+          "description": "Reference to Trader B's profile. (Relationship: Duel 1:1 TraderProfile)"
+        },
+        "seed": {
+          "type": "string",
+          "description": "Random seed used for deterministic simulation."
+        },
+        "mu": {
+          "type": "number",
+          "description": "Mu value calculated from log returns."
+        },
+        "sigma": {
+          "type": "number",
+          "description": "Sigma value calculated from log returns."
+        },
+        "pathHash": {
+          "type": "string",
+          "description": "SHA-256 hash of the simulated path for integrity verification."
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Timestamp when the duel started.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the duel (LOCKED, RUNNING, COMPLETE)."
+        },
+        "winnerUid": {
+          "type": "string",
+          "description": "Reference to the TraderProfile that won the duel."
+        },
+        "pnl": {
+          "type": "string",
+          "description": "The total profit and loss of the duel for each player."
+        },
+        "signature": {
+          "type": "string",
+          "description": "HMAC_SHA256 signature of the duel result for verification."
+        }
+      },
+      "required": [
+        "duelId",
+        "symbol",
+        "simDays",
+        "durationSec",
+        "traderAId",
+        "traderBId",
+        "seed",
+        "mu",
+        "sigma",
+        "pathHash",
+        "status"
+      ]
+    },
+    "DuelPath": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DuelPath",
+      "type": "object",
+      "description": "Stores the simulated price path for a duel.",
+      "properties": {
+        "duelId": {
+          "type": "string",
+          "description": "Reference to the Duel entity. (PK, Relationship: DuelPath 1:1 Duel)"
+        },
+        "path": {
+          "type": "string",
+          "description": "Base64-encoded Float32Array of minute close prices."
+        }
+      },
+      "required": [
+        "duelId",
+        "path"
+      ]
+    },
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a trader's order placed during a duel.",
+      "properties": {
+        "orderId": {
+          "type": "string",
+          "description": "Unique identifier for the order entity. (PK)"
+        },
+        "duelId": {
+          "type": "string",
+          "description": "Reference to the Duel entity. (Relationship: Duel 1:N Order)"
+        },
+        "traderId": {
+          "type": "string",
+          "description": "Reference to the TraderProfile that placed the order. (Relationship: TraderProfile 1:N Order)"
+        },
+        "side": {
+          "type": "string",
+          "description": "The side of the order (BUY or SELL)."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of the order (MARKET or LIMIT)."
+        },
+        "qty": {
+          "type": "number",
+          "description": "The quantity of the order."
+        },
+        "limitPrice": {
+          "type": "number",
+          "description": "The limit price for a LIMIT order."
+        },
+        "clientTickIndex": {
+          "type": "number",
+          "description": "The client's tick index when the order was placed."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the order (FILLED or OPEN)."
+        },
+        "fillPrice": {
+          "type": "number",
+          "description": "The price at which the order was filled."
+        },
+        "filledAtTick": {
+          "type": "number",
+          "description": "The tick index when the order was filled."
+        },
+        "pnl": {
+          "type": "number",
+          "description": "The profit and loss generated by the order."
+        }
+      },
+      "required": [
+        "orderId",
+        "duelId",
+        "traderId",
+        "side",
+        "type",
+        "qty",
+        "clientTickIndex",
+        "status"
+      ]
+    },
+    "Position": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Position",
+      "type": "object",
+      "description": "Represents a trader's position during a duel.",
+      "properties": {
+        "positionId": {
+          "type": "string",
+          "description": "Unique identifier for the position entity. (PK)"
+        },
+        "duelId": {
+          "type": "string",
+          "description": "Reference to the Duel entity. (Relationship: Duel 1:N Position)"
+        },
+        "traderId": {
+          "type": "string",
+          "description": "Reference to the TraderProfile owning the position. (Relationship: TraderProfile 1:N Position)"
+        },
+        "qty": {
+          "type": "number",
+          "description": "The quantity of the asset held in the position."
+        },
+        "averagePrice": {
+          "type": "number",
+          "description": "The average price of the asset in the position."
+        }
+      },
+      "required": [
+        "positionId",
+        "duelId",
+        "traderId",
+        "qty",
+        "averagePrice"
+      ]
+    },
+    "TraderProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "TraderProfile",
+      "type": "object",
+      "description": "Represents a trader's profile.",
+      "properties": {
+        "traderId": {
+          "type": "string",
+          "description": "Unique identifier for the trader profile. (PK)"
+        },
+        "owner": {
+          "type": "string",
+          "description": "The owner's account pubkey."
+        },
+        "name": {
+          "type": "string",
+          "description": "A short name for the trader (32 char)."
+        },
+        "nftMint": {
+          "type": "string",
+          "description": "Pointer to Metaplex mint."
+        },
+        "elo": {
+          "type": "number",
+          "description": "ELO rating."
+        },
+        "wins": {
+          "type": "number",
+          "description": "The amount of won duels."
+        },
+        "losses": {
+          "type": "number",
+          "description": "The amount of lost duels."
+        },
+        "xp": {
+          "type": "number",
+          "description": "Experience points."
+        },
+        "tier": {
+          "type": "number",
+          "description": "Bronze/silver/gold tier."
+        },
+        "skins": {
+          "type": "array",
+          "description": "A list of owned skin mint PDAs.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lastDailyClaim": {
+          "type": "number",
+          "description": "The unix timestamp of the last daily claim."
+        }
+      },
+      "required": [
+        "traderId",
+        "owner",
+        "name",
+        "nftMint",
+        "elo",
+        "wins",
+        "losses",
+        "xp",
+        "tier"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/traderProfiles/{traderId}",
+        "definition": {
+          "entityName": "TraderProfile",
+          "schema": {
+            "$ref": "#/backend/entities/TraderProfile"
+          },
+          "description": "Stores trader profile information. Uses path-based ownership for private data. All trader profiles are stored in a single collection to enable efficient queries and leaderboards.",
+          "params": [
+            {
+              "name": "traderId",
+              "description": "The unique identifier of the trader's profile."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/duels/{duelId}",
+        "definition": {
+          "entityName": "Duel",
+          "schema": {
+            "$ref": "#/backend/entities/Duel"
+          },
+          "description": "Stores duel metadata, including participants, settings, and results. Includes denormalized 'traderAId' and 'traderBId' fields for authorization independence.",
+          "params": [
+            {
+              "name": "duelId",
+              "description": "The unique identifier of the duel."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/duelPaths/{duelId}",
+        "definition": {
+          "entityName": "DuelPath",
+          "schema": {
+            "$ref": "#/backend/entities/DuelPath"
+          },
+          "description": "Stores the simulated price path for a duel.",
+          "params": [
+            {
+              "name": "duelId",
+              "description": "The unique identifier of the duel."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/duels/{duelId}/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Stores orders placed during a duel.  Access controlled by duel participants. Authorization depends on `duel.status` and `request.time`.",
+          "params": [
+            {
+              "name": "duelId",
+              "description": "The unique identifier of the duel."
+            },
+            {
+              "name": "orderId",
+              "description": "The unique identifier of the order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/duels/{duelId}/positions/{traderId}",
+        "definition": {
+          "entityName": "Position",
+          "schema": {
+            "$ref": "#/backend/entities/Position"
+          },
+          "description": "Stores positions of traders during a duel. Access controlled to duel participants. Denormalized 'members' map for authorization independence.",
+          "params": [
+            {
+              "name": "duelId",
+              "description": "The unique identifier of the duel."
+            },
+            {
+              "name": "traderId",
+              "description": "The unique identifier of the trader."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the Fluxion Fast-Forward Duels application, emphasizing security, scalability, and debuggability. It incorporates denormalization to ensure authorization independence, facilitating atomic operations and simplifying security rules. Structural segregation is used to maintain homogeneous security postures within collections, and a membership map pattern is applied for collaborative data access. \n\nAuthorization Independence is achieved by denormalizing authorization data. Specifically, the `duels/{duelId}/orders/{orderId}` and `duels/{duelId}/positions/{uid}` subcollections inherit authorization context from the parent `duels/{duelId}` document. This avoids `get()` calls in security rules, which would break atomic operations (transactions/batches). The `members` map, if implemented, would be denormalized into subcollections to avoid `get()` calls.\n\nThe structure supports the required QAPs by segregating data based on access needs. Private data (user-specific profiles) is stored under `/users/{userId}`, while collaborative data (duels) is managed via the `duels` collection with appropriate security rules governing access based on duel participants. The use of subcollections (`orders`, `positions`) further refines access control within the duel context. Path-based ownership is used for user-owned data, with hierarchical paths ensuring secure and efficient ownership-based security rules. Explicit state modeling (using a `status` field) and a predictable schema enhance data clarity and predictability.\n"
+  }
+}

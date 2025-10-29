@@ -1,0 +1,28 @@
+{
+  "placeholderImages": [
+    {
+      "id": "trader-1",
+      "description": "A futuristic female warrior with glowing cybernetics.",
+      "imageUrl": "https://images.unsplash.com/photo-1745383586468-13f3a24ffe8b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxmdXR1cmlzdGljJTIwd2FycmlvcnxlbnwwfHx8fDE3NjE3NjI2NTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "futuristic warrior"
+    },
+    {
+      "id": "trader-2",
+      "description": "A stoic male cyborg with a metallic arm.",
+      "imageUrl": "https://images.unsplash.com/photo-1575419262040-61aaba02f078?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjeWJvcmclMjBzb2xkaWVyfGVufDB8fHx8MTc2MTc2MjY1NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cyborg soldier"
+    },
+    {
+      "id": "trader-3",
+      "description": "A nimble scout in a high-tech suit.",
+      "imageUrl": "https://images.unsplash.com/photo-1688272684008-d6650258814f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHx0ZWNoJTIwc2NvdXR8ZW58MHx8fHwxNzYxNzYyNjU1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "tech scout"
+    },
+    {
+      "id": "trader-4",
+      "description": "A heavy-armored tank character with a large weapon.",
+      "imageUrl": "https://images.unsplash.com/photo-1737170317183-a13de1ce7d8a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YXJtb3JlZCUyMGNoYXJhY3RlcnxlbnwwfHx8fDE3NjE3NjI2NTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "armored character"
+    }
+  ]
+}

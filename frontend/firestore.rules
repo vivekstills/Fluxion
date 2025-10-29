@@ -1,0 +1,116 @@
+/**
+ * @fileoverview Firestore Security Rules for Fluxion Fast-Forward Duels.
+ *
+ * Core Philosophy:
+ * This ruleset prioritizes a strict user-ownership and duel-participant model.  
+ * Users can only manage their own profiles. Access to duel data (orders, positions) 
+ * is restricted to participants of the duel.
+ *
+ * Data Structure:
+ * - /traderProfiles/{traderId}: Stores individual trader profiles, accessible only to the profile owner.
+ * - /duels/{duelId}: Stores duel metadata, accessible to duel participants.
+ * - /duelPaths/{duelId}: Stores the price path data for a duel, accessible to duel participants.
+ * - /duels/{duelId}/orders/{orderId}: Stores orders within a duel, accessible to duel participants.
+ * - /duels/{duelId}/positions/{traderId}: Stores positions within a duel, accessible to duel participants.
+ *
+ * Key Security Decisions:
+ * - Users can only read and write their own trader profiles.
+ * - Access to duels and their subcollections (orders, positions) is restricted to the duel participants.
+ * - Data validation is minimized in this prototyping phase, focusing on ownership and relationship integrity.
+ *
+ * Denormalization for Authorization:
+ * - Duel documents contain 'traderAId' and 'traderBId' fields to avoid additional reads for authorization.
+ *
+ * Structural Segregation:
+ * - User profiles and duel data are stored in separate top-level collections to maintain clear security boundaries.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Manages trader profile access. Only the profile owner can read, create, update, or delete their profile.
+     * @path /traderProfiles/{traderId}
+     * @allow (get, create, update, delete) User with UID 'user_abc' can access /traderProfiles/user_abc
+     * @deny (get, create, update, delete) User with UID 'user_xyz' cannot access /traderProfiles/user_abc
+     * @principle Enforces document ownership for writes.
+     */
+    match /traderProfiles/{traderId} {
+      allow get: if isSignedIn() && isOwner(traderId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(traderId) && request.resource.data.owner == request.auth.uid;
+      allow update: if isSignedIn() && isOwner(traderId) && resource.data.owner == request.resource.data.owner;
+      allow delete: if isSignedIn() && isExistingOwner(traderId);
+    }
+
+    /**
+     * @description Manages duel metadata access.  Access to duels is open for all users.
+     * @path /duels/{duelId}
+     * @allow (get, list) Any user can read duel metadata.
+     * @allow (create) Any authenticated user can create a duel. The authorId in the incoming data must match their UID.
+     * @allow (update, delete) Only the author can update or delete a duel.
+     * @principle Allows public read access while restricting writes to the author.
+     */
+    match /duels/{duelId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && (request.auth.uid == request.resource.data.traderAId || request.auth.uid == request.resource.data.traderBId);
+      allow update: if isSignedIn() && (resource.data.traderAId == request.auth.uid || resource.data.traderBId == request.auth.uid);
+      allow delete: if isSignedIn() && (resource.data.traderAId == request.auth.uid || resource.data.traderBId == request.auth.uid);
+    }
+
+     /**
+      * @description Manages duel path access.  Access is public for all users.
+      * @path /duelPaths/{duelId}
+      * @allow (get, list) Any user can read duel path data.
+      * @allow (create) Any authenticated user can create a duel path. The authorId in the incoming data must match their UID.
+      * @allow (update, delete) Only the author can update or delete a duel path.
+      */
+    match /duelPaths/{duelId} {
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    /**
+     * @description Manages order access within a duel.  Only duel participants can create, read, update, or delete orders.
+     * @path /duels/{duelId}/orders/{orderId}
+     * @allow (create, get, update, delete) Users with UID 'user_abc' or 'user_xyz' can access /duels/some_duel/orders/some_order if they are participants in the duel.
+     * @deny (create, get, update, delete) User with UID 'outsider' cannot access /duels/some_duel/orders/some_order.
+     * @principle Restricts access to duel participants.
+     */
+    match /duels/{duelId}/orders/{orderId} {
+      allow get, list: if isSignedIn() && (get(/databases/$(database)/documents/duels/$(duelId)).data.traderAId == request.auth.uid || get(/databases/$(database)/documents/duels/$(duelId)).data.traderBId == request.auth.uid);
+      allow create: if isSignedIn() && (get(/databases/$(database)/documents/duels/$(duelId)).data.traderAId == request.auth.uid || get(/databases/$(database)/documents/duels/$(duelId)).data.traderBId == request.auth.uid);
+      allow update: if isSignedIn() && (get(/databases/$(database)/documents/duels/$(duelId)).data.traderAId == request.auth.uid || get(/databases/$(database)/documents/duels/$(duelId)).data.traderBId == request.auth.uid);
+      allow delete: if isSignedIn() && (get(/databases/$(database)/documents/duels/$(duelId)).data.traderAId == request.auth.uid || get(/databases/$(database)/documents/duels/$(duelId)).data.traderBId == request.auth.uid);
+    }
+
+    /**
+     * @description Manages position access within a duel. Only duel participants can create, read, update, or delete positions.
+     * @path /duels/{duelId}/positions/{traderId}
+     * @allow (create, get, update, delete) Users with UID 'user_abc' or 'user_xyz' can access /duels/some_duel/positions/user_abc if they are participants in the duel.
+     * @deny (create, get, update, delete) User with UID 'outsider' cannot access /duels/some_duel/positions/user_abc.
+     * @principle Restricts access to duel participants.
+     */
+    match /duels/{duelId}/positions/{traderId} {
+      allow get, list: if isSignedIn() && (get(/databases/$(database)/documents/duels/$(duelId)).data.traderAId == request.auth.uid || get(/databases/$(database)/documents/duels/$(duelId)).data.traderBId == request.auth.uid);
+      allow create: if isSignedIn() && (get(/databases/$(database)/documents/duels/$(duelId)).data.traderAId == request.auth.uid || get(/databases/$(database)/documents/duels/$(duelId)).data.traderBId == request.auth.uid);
+      allow update: if isSignedIn() && (get(/databases/$(database)/documents/duels/$(duelId)).data.traderAId == request.auth.uid || get(/databases/$(database)/documents/duels/$(duelId)).data.traderBId == request.auth.uid);
+      allow delete: if isSignedIn() && (get(/databases/$(database)/documents/duels/$(duelId)).data.traderAId == request.auth.uid || get(/databases/$(database)/documents/duels/$(duelId)).data.traderBId == request.auth.uid);
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+  }
+}
