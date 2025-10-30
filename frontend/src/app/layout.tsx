@@ -6,6 +6,10 @@ import { Header } from "@/components/layout/header";
 import { TargetCursorProvider } from '@/components/target-cursor-provider';
 
 
+import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { WalletProvider } from '@/components/wallet-provider';
+import '@solana/wallet-adapter-react-ui/styles.css';
+
 export const metadata: Metadata = {
   title: 'Fluxion Arena',
   description: 'Valorant-style NFT card game with battles based on ELO.',
@@ -26,12 +30,16 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet" />
       </head>
       <body className={cn("font-body antialiased", "bg-background")}>
-        <TargetCursorProvider />
-        <Header />
-        <main className="flex flex-1 flex-col bg-background h-screen pt-20">
-          {children}
-        </main>
-        <Toaster />
+        <FirebaseClientProvider>
+          <WalletProvider>
+            <TargetCursorProvider />
+            <Header />
+            <main className="flex flex-1 flex-col bg-background h-screen pt-20">
+              {children}
+            </main>
+            <Toaster />
+          </WalletProvider>
+        </FirebaseClientProvider>
       </body>
     </html>
   );

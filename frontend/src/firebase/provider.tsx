@@ -6,6 +6,8 @@ import { Firestore } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 
+import { getDoc, setDoc, doc, serverTimestamp, collection, updateDoc } from 'firebase/firestore';
+
 interface FirebaseProviderProps {
   children: ReactNode;
   firebaseApp: FirebaseApp;
@@ -69,10 +71,42 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   // Effect to subscribe to Firebase auth state changes
   useEffect(() => {
-    if (!auth) { // If no Auth service instance, cannot determine user state
-      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth service not provided.") });
+    if (!auth || !firestore) { // If no Auth service instance, cannot determine user state
+      setUserAuthState({ user: null, isUserLoading: false, userError: new Error("Auth or Firestore service not provided.") });
       return;
     }
+
+    const handleUserCreation = async (firebaseUser: User) => {
+      const userRef = doc(firestore, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userRef);
+
+      if (!userDoc.exists()) {
+        // New user, create user and trader documents
+        const traderRef = doc(collection(firestore, 'traders'));
+        const newTrader = {
+          userId: firebaseUser.uid,
+          name: firebaseUser.displayName || 'New Trader',
+          xp: 0,
+          level: 1,
+          riskAppetite: 'Medium',
+        };
+        await setDoc(traderRef, newTrader);
+
+        const newUser = {
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          createdAt: serverTimestamp(),
+          lastLoginAt: serverTimestamp(),
+          traderId: traderRef.id,
+        };
+        await setDoc(userRef, newUser);
+      } else {
+        // Existing user, update last login time
+        await updateDoc(userRef, {
+          lastLoginAt: serverTimestamp(),
+        });
+      }
+    };
 
     setUserAuthState({ user: null, isUserLoading: true, userError: null }); // Reset on auth instance change
 
@@ -80,6 +114,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth,
       (firebaseUser) => { // Auth state determined
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+        if (firebaseUser) {
+          handleUserCreation(firebaseUser);
+        }
       },
       (error) => { // Auth listener error
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
@@ -87,7 +124,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       }
     );
     return () => unsubscribe(); // Cleanup
-  }, [auth]); // Depends on the auth instance
+  }, [auth, firestore]); // Depends on the auth instance
 
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {

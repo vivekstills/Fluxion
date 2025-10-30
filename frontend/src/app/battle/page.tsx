@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -14,6 +15,8 @@ import FaultyTerminal from '@/components/faulty-terminal';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bot } from 'lucide-react';
+import { simulateBattle } from '@/services/backend-service';
+import { traders } from '@/lib/mock-data';
 
 const StockChart = dynamic(() => import('@/components/stock-chart'), {
   ssr: false,
@@ -23,6 +26,16 @@ const StockChart = dynamic(() => import('@/components/stock-chart'), {
 const timeFrames = ['+5min', '+10min', '+15min', '+30min', '+60min'];
 
 export default function BattlePage() {
+  const [simulationResult, setSimulationResult] = useState(null);
+
+  const handleSimulate = async () => {
+    try {
+      const result = await simulateBattle(traders[0], traders[1]);
+      setSimulationResult(result);
+    } catch (error) {
+      console.error('Failed to simulate battle:', error);
+    }
+  };
   return (
     <div className="relative flex flex-col h-full w-full items-center justify-center p-4 overflow-hidden">
       <div className="absolute inset-0 w-full h-full">
@@ -80,10 +93,24 @@ export default function BattlePage() {
                        <Skeleton className="h-10 w-full" />
                     </CardContent>
                   </Card>
-                  <Button className="w-full font-headline bg-accent hover:bg-accent/80 mt-auto">
-                    <Bot className="mr-2 h-4 w-4" />
-                    Submit & Await AI Verdict
-                  </Button>
+                  <div className="flex gap-2 mt-auto">
+                    <Button className="w-full font-headline bg-accent hover:bg-accent/80">
+                      <Bot className="mr-2 h-4 w-4" />
+                      Submit & Await AI Verdict
+                    </Button>
+                    <Button
+                      className="w-full font-headline bg-blue-500 hover:bg-blue-500/80"
+                      onClick={handleSimulate}
+                    >
+                      <Bot className="mr-2 h-4 w-4" />
+                      Simulate Battle
+                    </Button>
+                  </div>
+                  {simulationResult && (
+                    <pre className="mt-4 text-xs bg-gray-800 p-4 rounded-md overflow-auto">
+                      {JSON.stringify(simulationResult, null, 2)}
+                    </pre>
+                  )}
                 </div>
               </CardContent>
             </Card>
